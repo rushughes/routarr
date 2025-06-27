@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Routarr - Torrent Upload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            margin-bottom: 40px;
+        }
+
+        .upload-area {
+            border: 3px dashed #e5e7eb;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #4f46e5;
+            background-color: #f8fafc;
+        }
+
+        .upload-area.dragover {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #9ca3af;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 0.9rem;
+            color: #9ca3af;
+        }
+
+        #torrent-file {
+            display: none;
+        }
+
+        .trackers-section {
+            display: none;
+        }
+
+        .trackers-section.show {
+            display: block;
+        }
+
+        .trackers-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .trackers-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .torrent-name {
+            font-size: 0.9rem;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .tracker-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .tracker-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tracker-item:hover {
+            background: #f1f5f9;
+            border-color: #d1d5db;
+        }
+
+        .tracker-url {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            color: #374151;
+            word-break: break-all;
+            flex: 1;
+            margin-right: 15px;
+        }
+
+        .tracker-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .add-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .add-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .add-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .exists-badge {
+            background: #6b7280;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .success-badge {
+            background: #10b981;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .nav-link {
+            color: #4f46e5;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 2px solid #4f46e5;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: #4f46e5;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .tracker-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .tracker-url {
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Routarr</h1>
+            <p>Upload torrents and manage trackers</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-section">
+                <form method="post" enctype="multipart/form-data" id="upload-form">
+                    {% csrf_token %}
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">Drop your .torrent file here</div>
+                        <div class="upload-hint">or click to browse</div>
+                        <input type="file" name="torrent_file" id="torrent-file" accept=".torrent">
+                    </div>
+                </form>
+            </div>
+
+            <div class="trackers-section" id="trackers-section">
+                <div class="trackers-header">
+                    <div>
+                        <div class="trackers-title">Trackers Found</div>
+                        <div class="torrent-name" id="torrent-name"></div>
+                    </div>
+                </div>
+
+                <div class="tracker-list" id="tracker-list">
+                    {% if trackers %}
+                        {% for tracker in trackers %}
+                        <div class="tracker-item" data-url="{{ tracker.url }}">
+                            <div class="tracker-url">{{ tracker.url }}</div>
+                            <div class="tracker-actions">
+                                {% if tracker.exists %}
+                                    <span class="exists-badge">Already Added</span>
+                                {% else %}
+                                    <button class="add-btn" onclick="addTracker('{{ tracker.url }}')">
+                                        <span>+</span> Add
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="nav-links">
+                <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+                <a href="/admin/" class="nav-link">Admin</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File upload handling
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('torrent-file');
+        const uploadForm = document.getElementById('upload-form');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                uploadForm.submit();
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadForm.submit();
+            }
+        });
+
+        // Show trackers section if we have trackers
+        {% if trackers %}
+            document.getElementById('trackers-section').classList.add('show');
+            document.getElementById('torrent-name').textContent = '{{ torrent_name }}';
+        {% endif %}
+
+        // Add tracker functionality
+        function addTracker(trackerUrl) {
+            const button = event.target.closest('.add-btn');
+            const trackerItem = button.closest('.tracker-item');
+            
+            button.disabled = true;
+            button.innerHTML = '<span>⏳</span> Adding...';
+            trackerItem.classList.add('loading');
+
+            fetch('{% url "add_tracker" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `tracker_url=${encodeURIComponent(trackerUrl)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    button.innerHTML = '<span>✅</span> Added';
+                    button.classList.remove('add-btn');
+                    button.classList.add('success-badge');
+                    button.disabled = true;
+                } else {
+                    button.innerHTML = '<span>❌</span> Error';
+                    button.style.background = '#ef4444';
+                    setTimeout(() => {
+                        button.innerHTML = '<span>+</span> Add';
+                        button.style.background = '';
+                        button.disabled = false;
+                    }, 2000);
+                }
+                trackerItem.classList.remove('loading');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                button.innerHTML = '<span>❌</span> Error';
+                button.style.background = '#ef4444';
+                setTimeout(() => {
+                    button.innerHTML = '<span>+</span> Add';
+                    button.style.background = '';
+                    button.disabled = false;
+                }, 2000);
+                trackerItem.classList.remove('loading');
+            });
+        }
+    </script>
+</body>
+</html> 
