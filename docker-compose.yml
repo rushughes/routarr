@@ -1,0 +1,12 @@
+services:
+  routarr:
+    build: .
+    environment:
+      - UID=501
+      - GID=501
+    volumes:
+      - ./config:/app/config
+      - ./incoming:/incoming
+      - ./watching:/watching
+    ports:
+      - "8000:8000"

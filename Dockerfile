@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+# Create necessary directories
+RUN mkdir -p /incoming /watching /app/config
+
+# Set up user and permissions
+ARG UID=1000
+ARG GID=1000
+RUN addgroup --gid $GID appgroup && \
+    adduser --disabled-password --gecos '' --uid $UID --gid $GID appuser && \
+    chown -R $UID:$GID /app /incoming /watching
+
+USER appuser
+
+# Create migrations for the app models
+RUN python manage.py makemigrations app
+
+# Run migrations and create superuser, then start the server
+CMD ["sh", "-c", "python manage.py migrate && echo 'from django.contrib.auth.models import User; User.objects.create_superuser(\"admin\", \"admin@example.com\", \"password\") if not User.objects.filter(username=\"admin\").exists() else None' | python manage.py shell && python manage.py runserver 0.0.0.0:8000"]
