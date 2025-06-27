@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from .models import Tracker, DestinationFolder, Rule, Config
+from .forms import DestinationFolderForm
 
 
 @admin.register(Tracker)
@@ -32,6 +33,7 @@ class TrackerAdmin(admin.ModelAdmin):
 
 @admin.register(DestinationFolder)
 class DestinationFolderAdmin(admin.ModelAdmin):
+    form = DestinationFolderForm
     list_display = ('path', 'id', 'description', 'created_at')
     search_fields = ('path', 'description')
     ordering = ('path',)
@@ -39,7 +41,7 @@ class DestinationFolderAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Folder Information', {
             'fields': ('path', 'description'),
-            'description': 'Enter the full path to the qBittorrent watch folder where torrents should be moved.'
+            'description': 'Use the Browse button to select a directory from the filesystem, or enter the path manually.'
         }),
     )
     

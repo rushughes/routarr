@@ -144,6 +144,50 @@ def add_tracker(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+def list_directories(request):
+    """List directories in the filesystem for the directory browser"""
+    try:
+        path = request.GET.get('path', '/')
+        
+        # Security: prevent directory traversal attacks
+        if '..' in path or path.startswith('/etc') or path.startswith('/proc'):
+            return JsonResponse({'error': 'Access denied'}, status=403)
+        
+        if not os.path.exists(path):
+            return JsonResponse({'error': 'Path does not exist'}, status=404)
+        
+        if not os.path.isdir(path):
+            return JsonResponse({'error': 'Path is not a directory'}, status=400)
+        
+        # Get directories in the path
+        directories = []
+        try:
+            for item in os.listdir(path):
+                item_path = os.path.join(path, item)
+                if os.path.isdir(item_path):
+                    directories.append({
+                        'name': item,
+                        'path': item_path,
+                        'readable': os.access(item_path, os.R_OK)
+                    })
+        except PermissionError:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        
+        # Sort directories alphabetically
+        directories.sort(key=lambda x: x['name'].lower())
+        
+        return JsonResponse({
+            'directories': directories,
+            'current_path': path,
+            'parent_path': os.path.dirname(path) if path != '/' else None
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
 def dashboard(request):
     """Dashboard showing current trackers, destinations, and rules"""
     trackers = Tracker.objects.all()
