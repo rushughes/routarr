@@ -1,0 +1,21 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="module">
+    <h2>🚀 Routarr Dashboard</h2>
+    <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
+        <p style="margin: 0 0 15px 0; font-size: 16px;">
+            <strong>Quick Access:</strong>
+        </p>
+        <a href="{{ dashboard_url }}" style="display: inline-block; background: #007cba; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
+            📊 View Dashboard
+        </a>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
+            View your current trackers, destinations, and rules in a user-friendly interface.
+        </p>
+    </div>
+</div>
+
+{{ block.super }}
+{% endblock %} 

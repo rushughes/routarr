@@ -7,6 +7,7 @@ from .models import Tracker, DestinationFolder, Rule, Config
 import os
 import bencodepy
 import tempfile
+from urllib.parse import urlparse
 
 
 def upload_torrent(request):
@@ -33,7 +34,7 @@ def upload_torrent(request):
                 for tracker in trackers:
                     tracker_data.append({
                         'url': tracker,
-                        'exists': any(pattern in tracker for pattern in existing_trackers)
+                        'exists': is_tracker_matched(tracker, existing_trackers)
                     })
                 
                 context = {
@@ -72,6 +73,47 @@ def extract_trackers(torrent_path):
     return list(set(trackers))  # Remove duplicates
 
 
+def is_tracker_matched(tracker_url, existing_patterns):
+    """
+    Check if a tracker URL matches any existing patterns using proper domain matching.
+    
+    Args:
+        tracker_url: The full tracker URL (e.g., "https://tracker.torrentleech.org/announce")
+        existing_patterns: List of existing tracker patterns in the database
+    
+    Returns:
+        bool: True if the tracker matches any existing pattern
+    """
+    try:
+        # Parse the tracker URL to extract the domain
+        parsed_url = urlparse(tracker_url)
+        tracker_domain = parsed_url.netloc.lower()
+        
+        # Check each existing pattern
+        for pattern in existing_patterns:
+            pattern_lower = pattern.lower()
+            
+            # If the pattern is a domain (contains dots), do exact domain matching
+            if '.' in pattern_lower:
+                if tracker_domain == pattern_lower:
+                    return True
+            else:
+                # If the pattern is a simple string, check if it's contained in the domain
+                # but only as a complete word to avoid partial matches
+                if pattern_lower in tracker_domain:
+                    # Check if it's a complete word (not part of another word)
+                    import re
+                    if re.search(r'\b' + re.escape(pattern_lower) + r'\b', tracker_domain):
+                        return True
+        
+        return False
+        
+    except Exception:
+        # If URL parsing fails, fall back to simple substring matching
+        tracker_lower = tracker_url.lower()
+        return any(pattern.lower() in tracker_lower for pattern in existing_patterns)
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def add_tracker(request):
@@ -82,7 +124,6 @@ def add_tracker(request):
             return JsonResponse({'success': False, 'error': 'No tracker URL provided'})
         
         # Create a pattern from the tracker URL (extract domain)
-        from urllib.parse import urlparse
         parsed = urlparse(tracker_url)
         pattern = parsed.netloc
         

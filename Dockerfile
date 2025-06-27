@@ -24,5 +24,5 @@ USER appuser
 # Create migrations for the app models
 RUN python manage.py makemigrations app
 
-# Run migrations and create superuser, then start the server
-CMD ["sh", "-c", "python manage.py migrate && echo 'from django.contrib.auth.models import User; User.objects.create_superuser(\"admin\", \"admin@example.com\", \"password\") if not User.objects.filter(username=\"admin\").exists() else None' | python manage.py shell && python manage.py runserver 0.0.0.0:8000"]
+# Start the application using the startup script
+CMD ["python", "startup.py"]
